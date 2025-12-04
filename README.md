@@ -9,7 +9,7 @@ FreyaAI is an innovative web application designed to help users navigate and man
 
 ---
 
-## 🚀 1. Introduction  
+## 1. Introduction  
 
 Existing music recommendation systems often rely on oversimplified emotional models or generic genre-based classifications, failing to address nuanced emotional needs. FreyaAI bridges this gap by:  
 - **Expanding emotional granularity**: Incorporating 30+ emotions derived from Darwin's *The Expression of the Emotions in Man and Animals* (1872).  
@@ -22,7 +22,7 @@ Existing music recommendation systems often rely on oversimplified emotional mod
 
 ---
 
-## ⚙️ 2. System Architecture  
+## 2. System Architecture  
 
 The application follows a modern full-stack architecture with the following components:  
 ```plaintext
@@ -45,7 +45,7 @@ Key dependencies:
 
 ---
 
-## 🧠 3. Emotion Identification  
+## 3. Emotion Identification  
 
 ### 3.1 Theoretical Foundation  
 Darwin's work established that emotions are universal, biologically rooted, and expressed through consistent physical cues (e.g., facial expressions, posture). FreyaAI adapts his taxonomy to modern affective computing by:  
@@ -65,7 +65,7 @@ User Input: "Overwhelmed at work but craving joy"
 
 ---
 
-## 🎧 4. Music Experience Features  
+## 4. Music Experience Features  
 
 ### 4.1 Playlist Generation  
 1. **Emotion-Genre Mapping**: Predefined associations (e.g., "Devotion" → Gospel, Soul; "Ill-temper" → Heavy Metal).  
@@ -95,7 +95,7 @@ Users can select their preferred genres, which influences the recommendations wh
 
 ---
 
-## 🛡️ 5. Mitigating Filter Bubbles  
+## 5. Mitigating Filter Bubbles  
 
 To counteract algorithmic over-specialization:  
 - **Genre Injection**: Forces 20% of tracks from outside the user's typical listening history.  
@@ -104,7 +104,7 @@ To counteract algorithmic over-specialization:
 
 ---
 
-## 🛠️ 6. Usage Instructions  
+## 6. Usage Instructions  
 
 ### Install Dependencies
 ```
@@ -140,7 +140,7 @@ npm run dev        # Start Next.js frontend development server
 
 ---
 
-## 🎉 8. Conclusion  
+## 8. Conclusion  
 By grounding its model in Darwin's principles of emotional expression and leveraging modern NLP/ML tools, FreyaAI offers a scientifically informed alternative to rigid emotion-music systems. Its multi-modal approach to emotion detection and diverse music experiences addresses key limitations in current recommendation engines.  
 
 **Acknowledgements**: Spotify API team, OpenAI Developers, Suno AI team.
