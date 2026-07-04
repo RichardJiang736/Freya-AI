@@ -1,4 +1,5 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'node:crypto';
 
 const SPOTIFY_AUTH_URL = 'https://accounts.spotify.com/authorize';
 const SCOPES = [
@@ -10,15 +11,23 @@ const SCOPES = [
   'user-top-read',
 ].join(' ');
 
-export async function GET() {
-  const clientId = process.env.SPOTIFY_CLIENT_ID;
-  const redirectUri = process.env.SPOTIFY_REDIRECT_URI || 'http://127.0.0.1:8888/api/auth/callback';
+function sign(data: string): string {
+  const secret = process.env.SESSION_SECRET || 'dev-secret-change-me-32chars!!';
+  return crypto.createHmac('sha256', secret).update(data).digest('hex');
+}
 
+export async function GET(req: NextRequest) {
+  const clientId = process.env.SPOTIFY_CLIENT_ID;
   if (!clientId) {
     return NextResponse.json({ error: 'SPOTIFY_CLIENT_ID not set' }, { status: 500 });
   }
 
-  const state = crypto.randomUUID();
+  const redirectUri = process.env.SPOTIFY_REDIRECT_URI || 'http://127.0.0.1:8888/api/auth/callback';
+  const originalHost = req.headers.get('host') || '127.0.0.1:8888';
+
+  const nonce = crypto.randomUUID();
+  const payload = JSON.stringify({ n: nonce, h: originalHost });
+  const state = `${Buffer.from(payload).toString('base64url')}.${sign(payload)}`;
 
   const params = new URLSearchParams({
     response_type: 'code',
@@ -28,13 +37,5 @@ export async function GET() {
     state,
   });
 
-  const response = NextResponse.redirect(`${SPOTIFY_AUTH_URL}?${params.toString()}`);
-  response.cookies.set('spotify_auth_state', state, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 600,
-    path: '/',
-  });
-  return response;
+  return NextResponse.redirect(`${SPOTIFY_AUTH_URL}?${params.toString()}`);
 }

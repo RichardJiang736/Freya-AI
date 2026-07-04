@@ -6,8 +6,10 @@ export interface User {
 export interface AuthContextType {
   isAuthenticated: boolean;
   user: User | null;
+  hasGenres: boolean;
   login: () => void;
   logout: () => Promise<void>;
+  refreshAuth: () => Promise<void>;
 }
 
 export interface SessionPayload {

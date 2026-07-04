@@ -1,16 +1,19 @@
 import './globals.css';
 import type { Metadata } from 'next';
-import { Manrope } from 'next/font/google';
+import { Work_Sans } from 'next/font/google';
 import { AuthProvider } from './context/auth';
 
-const manrope = Manrope({ 
+const workSans = Work_Sans({
   subsets: ['latin'],
-  variable: '--font-manrope',
+  variable: '--font-sans',
+  display: 'swap',
+  weight: ['200', '300', '400', '500'],
 });
 
 export const metadata: Metadata = {
-  title: 'FreyaAI: Advanced Emotion-Driven Music Experience',
-  description: 'Let your feelings guide you to the perfect melody. Experience music that resonates with your soul.',
+  title: 'freya — emotion-driven music curation',
+  description:
+    'Discover music that resonates with your emotional state. AI-powered curation built on psychological models of emotion.',
 };
 
 export default function RootLayout({
@@ -19,11 +22,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={manrope.variable}>
-      <body className="font-manrope bg-white text-gray-900 min-h-screen">
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+    <html lang="en" className={workSans.variable} data-scroll-behavior="smooth">
+      <body className="font-sans bg-alabaster text-charcoal antialiased min-h-screen">
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

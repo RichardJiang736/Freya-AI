@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navigation from '../components/Navigation';
-import Link from 'next/link';
 import { useAuth } from '../context/auth';
 
 export default function NLPPage() {
@@ -13,9 +12,8 @@ export default function NLPPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
 
-  // Redirect unauthenticated users to login
   useEffect(() => {
     if (!isAuthenticated) {
       router.push('/login');
@@ -25,23 +23,21 @@ export default function NLPPage() {
   const handleAnalyzeEmotion = async () => {
     setIsLoading(true);
     setError('');
-    
+
     try {
       const response = await fetch('/api/nlp', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ mainEmotion, emotionDetail }),
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error || 'Failed to analyze emotion');
       }
-      
+
       setRefinedEmotion(data.refinedEmotion || data.emotion);
     } catch (err: any) {
       setError(err.message);
@@ -50,130 +46,138 @@ export default function NLPPage() {
     }
   };
 
-  const handleCreatePlaylist = async () => {
-    try {
-      const response = await fetch('/api/playlist', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ emotion: refinedEmotion || mainEmotion }),
-      });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to create playlist');
-      }
-      
-      const playlistId = data.playlistId;
-      const emotion = refinedEmotion || mainEmotion;
-      router.push(`/recommendations?playlistId=${playlistId}&emotion=${emotion}`);
-    } catch (err: any) {
-      setError(err.message);
-    }
+  const handleCreatePlaylist = () => {
+    const emotion = refinedEmotion || mainEmotion;
+    router.push(`/recommendations?emotion=${encodeURIComponent(emotion)}`);
   };
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-fresh-green-50 to-sky-blue">
+      <div className="min-h-screen flex items-center justify-center bg-alabaster ambient-light">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-fresh-green-600 mx-auto mb-4"></div>
-          <p className="text-fresh-green-700">Checking authentication...</p>
+          <div className="skeleton-breathing h-px w-48 mx-auto mb-8" />
+          <p className="text-stone text-sm tracking-sanctuary font-light">
+            preparing your sanctuary
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen bg-alabaster text-stone">
       <Navigation />
-      
-      <div className="flex-grow py-16 px-6 bg-gradient-to-b from-fresh-green-50 to-sky-blue">
+
+      <div className="pt-24 pb-16 px-6 ambient-light">
         <div className="container mx-auto max-w-4xl">
-          <h1 className="text-4xl font-bold mb-8 text-center text-fresh-green-800">Natural Language Processing with FreyaAI</h1>
-          
-          <div className="bg-white rounded-xl shadow-lg p-8 mb-10 border border-fresh-green-100">
-            <h2 className="text-2xl font-bold mb-4 text-fresh-green-800">Describe Your Emotion</h2>
-            <p className="text-fresh-green-700 mb-6">
-              Tell us how you're feeling in your own words. Our AI will analyze your text and recommend music that matches your emotional state.
+          {/* Header */}
+          <div className="text-center mb-16">
+            <p className="text-xs tracking-sanctuary text-stone mb-4 font-light">
+              natural language processing
             </p>
-            
-            <div className="mb-4">
-              <label className="block text-fresh-green-700 font-medium mb-2">Main Emotion</label>
+            <h1 className="text-4xl md:text-5xl text-ink font-light">
+              emotion analysis
+            </h1>
+          </div>
+
+          {/* Input card */}
+          <div className="card-glass rounded-lg p-8 md:p-12 mb-12">
+            <p className="text-xs tracking-sanctuary text-stone mb-10 font-light">
+              describe your state
+            </p>
+
+            <div className="mb-8">
+              <label className="block text-xs tracking-airy text-stone mb-3 font-light">
+                primary emotion
+              </label>
               <input
                 type="text"
                 value={mainEmotion}
                 onChange={(e) => setMainEmotion(e.target.value)}
-                className="w-full p-4 border border-fresh-green-200 rounded-lg mb-4 focus:ring-2 focus:ring-fresh-purple-500 focus:border-fresh-purple-500"
-                placeholder="e.g., Joy, Sadness, Anger..."
+                className="input-natural"
+                placeholder="joy, sadness, anger, nostalgia..."
               />
             </div>
-            
-            <div className="mb-6">
-              <label className="block text-fresh-green-700 font-medium mb-2">Detailed Description</label>
-              <textarea 
+
+            <div className="mb-10">
+              <label className="block text-xs tracking-airy text-stone mb-3 font-light">
+                detailed description
+              </label>
+              <textarea
                 value={emotionDetail}
                 onChange={(e) => setEmotionDetail(e.target.value)}
-                className="w-full h-40 p-4 border border-fresh-green-200 rounded-lg mb-6 focus:ring-2 focus:ring-fresh-purple-500 focus:border-fresh-purple-500"
-                placeholder="Describe your feelings in more detail..."
-              ></textarea>
+                className="input-natural h-32 resize-none"
+                placeholder="describe how you're feeling in your own words..."
+              />
             </div>
-            
-            <button 
-              onClick={handleAnalyzeEmotion}
-              disabled={isLoading}
-              className="bg-fresh-purple-500 hover:bg-fresh-purple-600 text-white font-bold py-3 px-6 rounded-lg transition duration-300 shadow-md disabled:opacity-50"
-            >
-              {isLoading ? 'Analyzing...' : 'Analyze Emotion'}
-            </button>
-            
-            {refinedEmotion && (
-              <div className="mt-6 p-4 bg-fresh-green-50 rounded-lg">
-                <h3 className="text-lg font-bold text-fresh-green-800">Refined Emotion:</h3>
-                <p className="text-fresh-green-700">{refinedEmotion}</p>
-                <button 
-                  onClick={handleCreatePlaylist}
-                  className="mt-4 bg-fresh-green-500 hover:bg-fresh-green-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300"
-                >
-                  Create Playlist
-                </button>
-              </div>
-            )}
-            
-            {error && (
-              <div className="mt-4 p-4 bg-red-50 text-red-700 rounded-lg">
-                Error: {error}
-              </div>
-            )}
+
+            <div className="flex flex-col items-start gap-6">
+              <button
+                onClick={handleAnalyzeEmotion}
+                disabled={isLoading}
+                className="btn-accent-natural disabled:opacity-40 disabled:pointer-events-none"
+              >
+                {isLoading ? 'analyzing...' : 'analyze emotion'}
+              </button>
+
+              {error && (
+                <div className="w-full p-4 bg-red-100/60 text-red-700/80 text-sm tracking-wide rounded-lg">
+                  {error}
+                </div>
+              )}
+
+              {refinedEmotion && (
+                <div className="w-full widget-glass rounded-lg p-6 border-l-2 border-l-sage-500/50">
+                  <p className="text-xs tracking-airy text-stone mb-2 font-light">
+                    refined emotion
+                  </p>
+                  <p className="text-xl text-ink font-light mb-6">
+                    {refinedEmotion}
+                  </p>
+                  <button onClick={handleCreatePlaylist} className="btn-accent-natural">
+                    create playlist
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-          
-          <div className="grid md:grid-cols-2 gap-8">
-            <div className="bg-white rounded-xl shadow-lg p-8 border border-fresh-green-100">
-              <h3 className="text-xl font-bold mb-4 text-fresh-green-800">How It Works</h3>
-              <ul className="list-disc pl-5 text-fresh-green-700 space-y-2">
-                <li>Advanced NLP processes your emotional description</li>
-                <li>Identifies specific emotions from Darwin's taxonomy</li>
-                <li>Matches emotions to appropriate music genres</li>
-                <li>Generates a personalized playlist</li>
+
+          {/* Info cards */}
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="card-glass rounded-lg p-8">
+              <h3 className="text-xl text-ink font-light mb-4">
+                how it works
+              </h3>
+              <ul className="text-stone text-sm space-y-3 leading-relaxed font-light">
+                <li>advanced nlp processes your emotional description</li>
+                <li>identifies specific emotions from darwin&apos;s taxonomy</li>
+                <li>matches emotions to appropriate music genres</li>
+                <li>generates a personalized spotify playlist</li>
               </ul>
             </div>
-            
-            <div className="bg-white rounded-xl shadow-lg p-8 border border-fresh-green-100">
-              <h3 className="text-xl font-bold mb-4 text-fresh-green-800">Why Darwin's Taxonomy?</h3>
-              <p className="text-fresh-green-700">
-                FreyaAI uses Charles Darwin's foundational work on emotional expression to provide more nuanced 
-                emotion recognition than traditional models, resulting in more accurate music recommendations.
+
+            <div className="card-glass rounded-lg p-8">
+              <h3 className="text-xl text-ink font-light mb-4">
+                why darwin&apos;s taxonomy?
+              </h3>
+              <p className="text-stone text-sm leading-relaxed font-light">
+                Freya AI uses Charles Darwin&apos;s foundational work on
+                emotional expression to provide more nuanced emotion recognition
+                than traditional valence-arousal models, resulting in more
+                accurate and emotionally resonant music recommendations.
               </p>
             </div>
           </div>
         </div>
       </div>
-      
-      <footer className="bg-fresh-green-900 text-white py-8 px-6">
+
+      {/* Footer */}
+      <footer className="bg-sand py-12 px-6">
+        <div className="section-divider-natural mb-12" />
         <div className="container mx-auto text-center">
-          <p className="text-fresh-green-200">© 2025 Richard Jiang, All rights reserved.</p>
+          <p className="text-xs tracking-wide text-stone font-light">
+            &copy; {new Date().getFullYear()} freya
+          </p>
         </div>
       </footer>
     </div>

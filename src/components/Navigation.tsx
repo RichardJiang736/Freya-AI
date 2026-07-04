@@ -10,105 +10,122 @@ export default function Navigation() {
   const router = useRouter();
   const { isAuthenticated, logout } = useAuth();
 
-  // Handle logout
   const handleLogout = async () => {
     await logout();
   };
 
   return (
-    <header className="bg-fresh-green-50 py-4 px-6 shadow-md border-b border-fresh-green-100">
-      <div className="container mx-auto flex justify-between items-center">
-        <Link href="/" className="text-2xl font-bold text-fresh-purple-700">
-          FreyaAI
+    <header className="fixed top-0 left-0 right-0 z-50 bg-alabaster/70 backdrop-blur-xl">
+      <div className="container mx-auto flex justify-between items-center py-5 px-6">
+        <Link
+          href="/"
+          className="text-lg tracking-sanctuary text-ink font-light hover:text-sage-500 transition-colors duration-400"
+        >
+          freya
         </Link>
-        
+
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex space-x-6">
-          <Link href="#about" className="font-semibold text-fresh-green-800 hover:text-fresh-purple-600 transition-colors">About</Link>
-          <button
-            onClick={() => {
-              if (isAuthenticated) {
-                router.push('/nlp');
-              } else {
-                router.push('/login');
-              }
-            }}
-            className="font-semibold text-fresh-green-800 hover:text-fresh-purple-600 transition-colors bg-transparent border-0 cursor-pointer"
+        <nav className="hidden md:flex items-center space-x-10">
+          <Link
+            href="/nlp"
+            className="text-sm tracking-airy text-charcoal font-light hover:text-ink transition-colors duration-400"
           >
-            NLP
-          </button>
+            emotions
+          </Link>
+          <Link
+            href="/genres"
+            className="text-sm tracking-airy text-charcoal font-light hover:text-ink transition-colors duration-400"
+          >
+            genres
+          </Link>
         </nav>
-        
-        {/* Auth buttons */}
-        <div className="hidden md:flex items-center space-x-4">
+
+        {/* Auth button */}
+        <div className="hidden md:flex items-center">
           {isAuthenticated ? (
-            <button 
+            <button
               onClick={handleLogout}
-              className="bg-fresh-green-500 hover:bg-fresh-green-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300"
+              className="btn-ghost-natural !px-4 !py-2 !text-xs !tracking-wide"
             >
-              Logout
+              logout
             </button>
           ) : (
-            <Link 
-              href="/login" 
-              className="bg-fresh-green-500 hover:bg-fresh-green-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300"
+            <Link
+              href="/login"
+              className="btn-ghost-natural !px-4 !py-2 !text-xs !tracking-wide"
             >
-              Login
+              login
             </Link>
           )}
         </div>
-        
+
         {/* Mobile menu button */}
-        <button 
-          className="md:hidden text-fresh-green-800 focus:outline-none"
+        <button
+          className="md:hidden text-charcoal hover:text-sage-500 transition-colors duration-400 focus:outline-none"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
-          aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+          aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
         >
-          <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg
+            className="h-5 w-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={1.5}
+          >
             {isMenuOpen ? (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M6 18L18 6M6 6l12 12"
+              />
             ) : (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
             )}
           </svg>
         </button>
       </div>
-      
+
       {/* Mobile Navigation */}
       {isMenuOpen && (
-        <div className="md:hidden bg-fresh-green-50 py-4 px-6 shadow-lg rounded-b-lg border-t border-fresh-green-100">
-          <div className="flex flex-col space-y-4">
-            <Link href="#about" className="font-semibold text-fresh-green-800 hover:text-fresh-purple-600 transition-colors" onClick={() => setIsMenuOpen(false)}>About</Link>
-            <button
-              onClick={() => {
-                if (isAuthenticated) {
-                  router.push('/nlp');
-                } else {
-                  router.push('/login');
-                }
-                setIsMenuOpen(false);
-              }}
-              className="font-semibold text-fresh-green-800 hover:text-fresh-purple-600 transition-colors bg-transparent border-0 cursor-pointer text-left"
+        <div className="md:hidden bg-sand/90 backdrop-blur-xl">
+          <div className="flex flex-col space-y-1 px-6 py-4">
+            <Link
+              href="/nlp"
+              className="text-sm tracking-airy text-charcoal font-light hover:text-ink transition-colors duration-400 py-3"
+              onClick={() => setIsMenuOpen(false)}
             >
-              NLP
-            </button>
+              emotions
+            </Link>
+            <Link
+              href="/genres"
+              className="text-sm tracking-airy text-charcoal font-light hover:text-ink transition-colors duration-400 py-3"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              genres
+            </Link>
 
-            {/* Mobile auth buttons */}
-            <div className="pt-4 border-t border-fresh-green-100">
+            <div className="pt-4 mt-2">
               {isAuthenticated ? (
-                <button 
-                  onClick={() => { handleLogout(); setIsMenuOpen(false); }}
-                  className="w-full bg-fresh-green-500 hover:bg-fresh-green-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300"
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setIsMenuOpen(false);
+                  }}
+                  className="btn-ghost-natural w-full !text-xs !tracking-wide"
                 >
-                  Logout
+                  logout
                 </button>
               ) : (
-                <Link 
-                  href="/login" 
-                  className="block w-full bg-fresh-green-500 hover:bg-fresh-green-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 text-center"
+                <Link
+                  href="/login"
+                  className="btn-ghost-natural w-full !text-xs !tracking-wide inline-flex items-center justify-center"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  Login
+                  login
                 </Link>
               )}
             </div>

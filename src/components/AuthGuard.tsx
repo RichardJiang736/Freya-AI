@@ -16,10 +16,12 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-fresh-green-50 to-sky-blue">
+      <div className="min-h-screen flex items-center justify-center bg-alabaster ambient-light">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-fresh-green-600 mx-auto mb-4"></div>
-          <p className="text-fresh-green-700">Checking authentication...</p>
+          <div className="skeleton-breathing h-px w-48 mx-auto mb-8" />
+          <p className="text-stone text-sm tracking-sanctuary font-light">
+            preparing your sanctuary
+          </p>
         </div>
       </div>
     );

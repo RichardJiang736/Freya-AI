@@ -2,6 +2,7 @@
   "/_global-error/page": "app/_global-error/page.js",
   "/_not-found/page": "app/_not-found/page.js",
   "/api/auth/callback/route": "app/api/auth/callback/route.js",
+  "/api/auth/finalize/route": "app/api/auth/finalize/route.js",
   "/api/auth/login/route": "app/api/auth/login/route.js",
   "/api/auth/logout/route": "app/api/auth/logout/route.js",
   "/api/auth/status/route": "app/api/auth/status/route.js",
@@ -14,6 +15,5 @@
   "/login/page": "app/login/page.js",
   "/nlp/page": "app/nlp/page.js",
   "/page": "app/page.js",
-  "/recommendations/page": "app/recommendations/page.js",
-  "/yolo/page": "app/yolo/page.js"
+  "/recommendations/page": "app/recommendations/page.js"
 }
