@@ -1,3 +1,204 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* =============================================
+   Design Tokens
+   ============================================= */
+:root {
+  --bg-alabaster: #f7f4ee;
+  --bg-sand: #f0ece4;
+  --bg-linen: #ede8df;
+  --bg-oak: #e8e2d8;
+  --text-ink: #3a3530;
+  --text-charcoal: #6b6560;
+  --text-stone: #8b8680;
+  --accent: #7d8c6e;
+  --accent-glow: rgba(125, 140, 110, 0.10);
+  --ease-buoyant: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* =============================================
+   Base Layer
+   ============================================= */
+@layer base {
+  body {
+    @apply bg-alabaster text-charcoal antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    @apply bg-sage-500/25 text-ink;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--bg-alabaster);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(139, 134, 128, 0.25);
+    border-radius: 3px;
+    transition: background 500ms var(--ease-buoyant);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(139, 134, 128, 0.45);
+  }
+}
+
+/* =============================================
+   Component Layer
+   ============================================= */
+@layer components {
+  /* --- Ambient Light Wash --- */
+  .ambient-light {
+    background: radial-gradient(
+      ellipse 70% 50% at 30% 30%,
+      rgba(245, 230, 208, 0.4),
+      transparent 70%
+    );
+  }
+
+  /* --- Wood-Slat Texture (light shoji screen) --- */
+  .bg-woodslat {
+    background-color: var(--bg-sand);
+    background-image: repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 11px,
+      rgba(0, 0, 0, 0.025) 11px,
+      rgba(0, 0, 0, 0.025) 12px
+    );
+  }
+
+  /* --- Glassmorphism Card --- */
+  .card-glass {
+    @apply bg-white/50 backdrop-blur-xl;
+    box-shadow: 0 4px 24px rgba(60, 50, 40, 0.05), 0 1px 2px rgba(60, 50, 40, 0.03);
+    transition: box-shadow 600ms var(--ease-buoyant),
+      background-color 600ms var(--ease-buoyant),
+      transform 600ms var(--ease-buoyant);
+  }
+  .card-glass:hover {
+    background-color: rgba(255, 255, 255, 0.72);
+    box-shadow: 0 12px 36px rgba(60, 50, 40, 0.08), 0 2px 4px rgba(60, 50, 40, 0.04),
+      0 0 0 1px rgba(125, 140, 110, 0.08);
+    transform: translateY(-1px);
+  }
+  .card-glass:active {
+    transform: scale(0.99);
+    transition: transform 150ms var(--ease-buoyant);
+  }
+
+  /* --- Glass Widget --- */
+  .widget-glass {
+    @apply bg-linen/50 backdrop-blur-md;
+    box-shadow: 0 2px 12px rgba(60, 50, 40, 0.04);
+    transition: box-shadow 600ms var(--ease-buoyant),
+      background-color 600ms var(--ease-buoyant),
+      transform 600ms var(--ease-buoyant);
+  }
+  .widget-glass:hover {
+    @apply bg-linen/70;
+    box-shadow: 0 8px 24px rgba(60, 50, 40, 0.08), 0 0 0 1px rgba(125, 140, 110, 0.06);
+    transform: translateY(-1px);
+  }
+
+  /* --- Natural Input --- */
+  .input-natural {
+    @apply w-full bg-transparent border-0 border-b border-stone/25
+           text-ink placeholder-stone
+           px-1 py-4
+           transition-all duration-500
+           focus:outline-none focus:border-sage-500 focus:ring-0;
+    font-family: inherit;
+    font-size: inherit;
+    letter-spacing: 0.02em;
+  }
+  .input-natural:focus {
+    box-shadow: 0 8px 20px rgba(125, 140, 110, 0.05);
+  }
+
+  /* --- Ghost Button (underline reveal) --- */
+  .btn-ghost-natural {
+    @apply inline-flex items-center justify-center
+           bg-transparent text-charcoal
+           px-6 py-3
+           text-sm tracking-wide
+           transition-all duration-500;
+    position: relative;
+    cursor: pointer;
+  }
+  .btn-ghost-natural::after {
+    content: '';
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    width: 0;
+    height: 1px;
+    background: var(--accent);
+    transition: width 400ms var(--ease-buoyant), left 400ms var(--ease-buoyant);
+  }
+  .btn-ghost-natural:hover {
+    @apply text-ink;
+  }
+  .btn-ghost-natural:hover::after {
+    width: 65%;
+    left: 17.5%;
+  }
+  .btn-ghost-natural:active {
+    transform: scale(0.97);
+    transition: transform 150ms var(--ease-buoyant);
+  }
+
+  /* --- Accent Button (sage pill) --- */
+  .btn-accent-natural {
+    @apply inline-flex items-center justify-center
+           bg-sage-500 text-white
+           px-8 py-3.5
+           text-sm tracking-wide font-normal
+           rounded-full
+           transition-all duration-500;
+    box-shadow: 0 2px 12px rgba(125, 140, 110, 0.15);
+    cursor: pointer;
+  }
+  .btn-accent-natural:hover {
+    @apply bg-sage-400;
+    box-shadow: 0 10px 28px rgba(125, 140, 110, 0.24);
+    transform: translateY(-1px);
+  }
+  .btn-accent-natural:active {
+    transform: scale(0.96);
+    box-shadow: 0 1px 6px rgba(125, 140, 110, 0.14);
+    transition: transform 150ms var(--ease-buoyant), box-shadow 150ms var(--ease-buoyant);
+  }
+
+  /* --- Natural Link --- */
+  .link-natural {
+    @apply text-charcoal transition-colors duration-300;
+  }
+  .link-natural:hover {
+    @apply text-sage-500;
+  }
+
+  /* --- Breathing Skeleton --- */
+  .skeleton-breathing {
+    @apply bg-linen;
+    animation: breathe 3.5s ease-in-out infinite;
+    will-change: opacity;
+  }
+
+  /* --- Section Divider --- */
+  .section-divider-natural {
+    @apply w-full h-px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(139, 134, 128, 0.18) 50%,
+      transparent 100%
+    );
+  }
+}

@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navigation from '../components/Navigation';
-import Link from 'next/link';
 import { useAuth } from '../context/auth';
 
 type Genre = {
@@ -13,48 +12,43 @@ type Genre = {
 };
 
 export default function GenresPage() {
-  // Sample genres data
   const allGenres: Genre[] = [
-    { id: 1, name: 'Classical', description: 'Timeless compositions for reflection' },
-    { id: 2, name: 'Jazz', description: 'Smooth rhythms for relaxation' },
-    { id: 3, name: 'Rock', description: 'Energetic beats for motivation' },
-    { id: 4, name: 'Electronic', description: 'Modern sounds for focus' },
-    { id: 5, name: 'Hip Hop', description: 'Rhythmic flows for confidence' },
-    { id: 6, name: 'Pop', description: 'Catchy tunes for happiness' },
-    { id: 7, name: 'Blues', description: 'Soulful melodies for contemplation' },
-    { id: 8, name: 'Country', description: 'Heartfelt stories for connection' },
-    { id: 9, name: 'R&B', description: 'Smooth vocals for romance' },
-    { id: 10, name: 'Folk', description: 'Traditional sounds for nostalgia' },
+    { id: 1, name: 'classical', description: 'timeless compositions for reflection and depth.' },
+    { id: 2, name: 'jazz', description: 'smooth, improvisational rhythms for contemplation.' },
+    { id: 3, name: 'rock', description: 'energetic, driving beats for catharsis and motivation.' },
+    { id: 4, name: 'electronic', description: 'synthetic textures and pulses for focus and immersion.' },
+    { id: 5, name: 'hip hop', description: 'rhythmic, lyrical flows for confidence and expression.' },
+    { id: 6, name: 'pop', description: 'polished, melodic structures for uplift and connection.' },
+    { id: 7, name: 'blues', description: 'soulful, raw melodies for introspection and release.' },
+    { id: 8, name: 'country', description: 'narrative-driven songs for grounding and nostalgia.' },
+    { id: 9, name: 'r&b', description: 'velvet vocals and groove for intimacy and warmth.' },
+    { id: 10, name: 'folk', description: 'organic, acoustic storytelling for comfort and belonging.' },
   ];
 
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, refreshAuth } = useAuth();
 
-  // Redirect unauthenticated users to login
   useEffect(() => {
     if (!isAuthenticated) {
       router.push('/login');
     }
   }, [isAuthenticated, router]);
 
-  // Load user's selected genres on component mount
   useEffect(() => {
     if (!isAuthenticated) return;
-    
+
     const loadUserGenres = async () => {
       try {
-        const response = await fetch('/api/genres', {
-          credentials: 'include',
-        });
+        const response = await fetch('/api/genres', { credentials: 'include' });
         const data = await response.json();
-        
+
         if (!response.ok) {
           throw new Error(data.error || 'Failed to load genres');
         }
-        
+
         setSelectedGenres(data.genres || []);
       } catch (err: any) {
         console.error('Error loading user genres:', err);
@@ -66,7 +60,7 @@ export default function GenresPage() {
 
   const handleGenreToggle = (genreName: string) => {
     if (selectedGenres.includes(genreName)) {
-      setSelectedGenres(selectedGenres.filter(g => g !== genreName));
+      setSelectedGenres(selectedGenres.filter((g) => g !== genreName));
     } else {
       setSelectedGenres([...selectedGenres, genreName]);
     }
@@ -75,24 +69,23 @@ export default function GenresPage() {
   const handleSaveGenres = async () => {
     setIsLoading(true);
     setError('');
-    
+
     try {
       const response = await fetch('/api/genres', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ genres: selectedGenres }),
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error || 'Failed to save genres');
       }
-      
-      alert('Genres saved successfully!');
+
+      await refreshAuth();
+      router.push('/nlp');
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -102,91 +95,113 @@ export default function GenresPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-fresh-green-50 to-sky-blue">
+      <div className="min-h-screen flex items-center justify-center bg-alabaster ambient-light">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-fresh-green-600 mx-auto mb-4"></div>
-          <p className="text-fresh-green-700">Checking authentication...</p>
+          <div className="skeleton-breathing h-px w-48 mx-auto mb-8" />
+          <p className="text-stone text-sm tracking-sanctuary font-light">
+            preparing your sanctuary
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen bg-alabaster text-stone">
       <Navigation />
-      
-      <div className="flex-grow py-16 px-6 bg-gradient-to-b from-fresh-green-50 to-sky-blue">
+
+      <div className="pt-24 pb-16 px-6 ambient-light">
         <div className="container mx-auto max-w-6xl">
-          <h1 className="text-4xl font-bold mb-8 text-center text-fresh-green-800">Music Genres in FreyaAI</h1>
-          
-          <p className="text-xl text-center mb-12 text-fresh-green-700 max-w-3xl mx-auto">
-            Explore our collection of genres, each carefully selected to match specific emotional states.
-            Our intelligent randomization prevents music taste cocooning.
-          </p>
-          
-          <div className="mb-8 p-6 bg-white rounded-xl shadow-lg border border-fresh-green-100">
-            <h2 className="text-2xl font-bold mb-4 text-fresh-green-800">Your Selected Genres</h2>
-            <div className="flex flex-wrap gap-2 mb-4">
+          {/* Header */}
+          <div className="text-center mb-16">
+            <p className="text-xs tracking-sanctuary text-stone mb-4 font-light">
+              curated palette
+            </p>
+            <h1 className="text-4xl md:text-5xl text-ink font-light mb-6">
+              music genres
+            </h1>
+            <p className="text-stone max-w-2xl mx-auto leading-relaxed font-light">
+              select your preferred genres. our intelligent randomization layer
+              prevents taste cocooning by introducing measured diversity into
+              every recommendation.
+            </p>
+          </div>
+
+          {/* Selected genres bar */}
+          <div className="card-glass rounded-lg p-6 md:p-8 mb-12">
+            <p className="text-xs tracking-sanctuary text-stone mb-4 font-light">
+              your palette
+            </p>
+            <div className="flex flex-wrap gap-2 mb-6">
               {selectedGenres.length > 0 ? (
-                selectedGenres.map(genre => (
-                  <span 
-                    key={genre} 
-                    className="bg-fresh-purple-100 text-fresh-purple-800 px-3 py-1 rounded-full text-sm"
+                selectedGenres.map((genre) => (
+                  <span
+                    key={genre}
+                    className="widget-glass rounded-full px-3 py-1.5 text-xs tracking-wide text-stone font-light border-l-2 border-l-sage-500/50"
                   >
                     {genre}
                   </span>
                 ))
               ) : (
-                <p className="text-fresh-green-700">No genres selected yet</p>
+                <p className="text-stone text-sm font-light">no genres selected</p>
               )}
             </div>
-            <button 
+            <button
               onClick={handleSaveGenres}
               disabled={isLoading}
-              className="bg-fresh-purple-500 hover:bg-fresh-purple-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 shadow-md disabled:opacity-50"
+              className="btn-accent-natural disabled:opacity-40"
             >
-              {isLoading ? 'Saving...' : 'Save Genres'}
+              {isLoading ? 'saving...' : 'save genres'}
             </button>
             {error && (
-              <div className="mt-2 p-2 bg-red-50 text-red-700 rounded">
-                Error: {error}
+              <div className="mt-4 p-4 bg-red-100/60 text-red-700/80 text-sm tracking-wide rounded-lg font-light">
+                {error}
               </div>
             )}
           </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {allGenres.map((genre) => (
-              <div 
-                key={genre.id} 
-                className={`rounded-xl shadow-lg overflow-hidden transition-transform duration-300 hover:scale-105 border-2 ${
-                  selectedGenres.includes(genre.name) 
-                    ? 'border-fresh-purple-500 bg-fresh-purple-50' 
-                    : 'border-fresh-green-100 bg-white'
-                }`}
-              >
-                <div className="p-6">
-                  <h3 className="text-2xl font-bold mb-2 text-fresh-green-800">{genre.name}</h3>
-                  <p className="text-fresh-green-700 mb-4">{genre.description}</p>
-                  <button
-                    onClick={() => handleGenreToggle(genre.name)}
-                    className={`font-semibold py-2 px-4 rounded-lg transition duration-300 ${
-                      selectedGenres.includes(genre.name)
-                        ? 'bg-fresh-purple-500 text-white hover:bg-fresh-purple-600'
-                        : 'bg-fresh-green-100 text-fresh-green-800 hover:bg-fresh-green-200'
+
+          {/* Genre grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {allGenres.map((genre) => {
+              const isSelected = selectedGenres.includes(genre.name);
+              return (
+                <div key={genre.id} className="bg-woodslat rounded-lg">
+                  <div
+                    className={`card-glass rounded-lg p-8 transition-all duration-500 hover:scale-[1.02] ${
+                      isSelected ? 'animate-sage-glow' : ''
                     }`}
                   >
-                    {selectedGenres.includes(genre.name) ? 'Selected' : 'Select'}
-                  </button>
+                    <h3 className="text-2xl text-ink font-light mb-3">
+                      {genre.name}
+                    </h3>
+                    <p className="text-stone text-sm leading-relaxed font-light mb-6">
+                      {genre.description}
+                    </p>
+                    <button
+                      onClick={() => handleGenreToggle(genre.name)}
+                      className={
+                        isSelected
+                          ? 'btn-accent-natural !px-4 !py-2 !text-xs'
+                          : 'btn-ghost-natural !px-4 !py-2 !text-xs'
+                      }
+                    >
+                      {isSelected ? 'selected' : 'select'}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
-      
-      <footer className="bg-fresh-green-900 text-white py-8 px-6">
+
+      {/* Footer */}
+      <footer className="bg-sand py-12 px-6">
+        <div className="section-divider-natural mb-12" />
         <div className="container mx-auto text-center">
-          <p className="text-fresh-green-200">© 2025 FreyaAI, All rights reserved.</p>
+          <p className="text-xs tracking-wide text-stone font-light">
+            &copy; {new Date().getFullYear()} freya
+          </p>
         </div>
       </footer>
     </div>

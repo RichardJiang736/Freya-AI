@@ -8,7 +8,16 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [hasGenres, setHasGenres] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const updateAuthState = (data: any) => {
+    if (data) {
+      setIsAuthenticated(data.isAuthenticated);
+      setUser(data.user || null);
+      setHasGenres(data.hasGenres || false);
+    }
+  };
 
   useEffect(() => {
     const checkAuthStatus = async () => {
@@ -16,15 +25,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const response = await fetch('/api/auth/status', { credentials: 'include' });
         if (response.ok) {
           const data = await response.json();
-          setIsAuthenticated(data.isAuthenticated);
-          setUser(data.user);
+          updateAuthState(data);
         } else {
           setIsAuthenticated(false);
           setUser(null);
+          setHasGenres(false);
         }
       } catch {
         setIsAuthenticated(false);
         setUser(null);
+        setHasGenres(false);
       } finally {
         setLoading(false);
       }
@@ -48,13 +58,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         })
         .then((data) => {
           if (data) {
-            setIsAuthenticated(data.isAuthenticated);
-            setUser(data.user);
+            updateAuthState(data);
           }
         })
         .catch(console.error);
     }
   }, []);
+
+  const refreshAuth = async () => {
+    try {
+      const response = await fetch('/api/auth/status', { credentials: 'include' });
+      if (response.ok) {
+        const data = await response.json();
+        updateAuthState(data);
+      }
+    } catch { /* ignore */ }
+  };
 
   const login = () => {
     window.location.href = '/api/auth/login';
@@ -66,19 +85,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch { /* ignore */ }
     setIsAuthenticated(false);
     setUser(null);
+    setHasGenres(false);
     window.location.href = '/login';
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-fresh-green-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-alabaster ambient-light">
+        <div className="skeleton-breathing h-px w-48" />
       </div>
     );
   }
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, hasGenres, login, logout, refreshAuth }}>
       {children}
     </AuthContext.Provider>
   );

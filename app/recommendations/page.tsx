@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Navigation from '../components/Navigation';
 import { useAuth } from '../context/auth';
@@ -9,6 +9,7 @@ function RecommendationsContent() {
   const searchParams = useSearchParams();
   const playlistId = searchParams.get('playlistId');
   const emotion = searchParams.get('emotion') || '';
+  const excludeGenresParam = searchParams.get('excludeGenres') || '';
 
   const [playlistEmbed, setPlaylistEmbed] = useState('');
   const [topTracks, setTopTracks] = useState<string[]>([]);
@@ -18,6 +19,7 @@ function RecommendationsContent() {
   const [error, setError] = useState('');
   const router = useRouter();
   const { isAuthenticated } = useAuth();
+  const hasLoaded = useRef(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -26,33 +28,66 @@ function RecommendationsContent() {
   }, [isAuthenticated, router]);
 
   useEffect(() => {
-    if (!isAuthenticated || !playlistId) return;
+    if (!isAuthenticated) return;
+    if (!playlistId && !emotion) return;
+    if (hasLoaded.current) return;
+
+    const excludedGenres = excludeGenresParam
+      ? excludeGenresParam.split(',').filter(Boolean)
+      : [];
 
     const fetchData = async () => {
       try {
-        const res = await fetch(
-          `/api/playlist/${playlistId}/recommendations?emotion=${encodeURIComponent(emotion)}`,
-          { credentials: 'include' }
-        );
+        if (playlistId) {
+          const res = await fetch(
+            `/api/playlist/${playlistId}/recommendations?emotion=${encodeURIComponent(emotion)}`,
+            { credentials: 'include' }
+          );
 
-        if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.error || 'Failed to load recommendations');
+          if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || 'Failed to load recommendations');
+          }
+
+          const data = await res.json();
+
+          setPlaylistEmbed(
+            `<iframe src="https://open.spotify.com/embed/playlist/${playlistId}?utm_source=generator" width="100%" height="808" frameborder="0" allowtransparency="true" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`
+          );
+
+          setTopTracks(
+            data.top_tracks?.map(
+              (t: { embedded_track_code: string }) => t.embedded_track_code
+            ) || []
+          );
+
+          setUsedGenres(data.genres || []);
+        } else {
+          const res = await fetch('/api/playlist', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ emotion, excludeGenres: excludedGenres }),
+          });
+
+          const data = await res.json();
+
+          if (!res.ok) {
+            throw new Error(data.error || 'Failed to create playlist');
+          }
+
+          setPlaylistEmbed(
+            `<iframe src="https://open.spotify.com/embed/playlist/${data.playlistId}?utm_source=generator" width="100%" height="808" frameborder="0" allowtransparency="true" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`
+          );
+
+          setTopTracks(data.top_tracks_embedded || []);
+          setUsedGenres(data.genres || []);
+
+          router.replace(
+            `/recommendations?playlistId=${data.playlistId}&emotion=${encodeURIComponent(emotion)}`
+          );
         }
-
-        const data = await res.json();
-
-        setPlaylistEmbed(
-          `<iframe src="https://open.spotify.com/embed/playlist/${playlistId}?utm_source=generator" width="100%" height="808" frameborder="0" allowtransparency="true" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`
-        );
-
-        setTopTracks(
-          data.top_tracks?.map(
-            (t: { embedded_track_code: string }) => t.embedded_track_code
-          ) || []
-        );
-
-        setUsedGenres(data.genres || []);
+        hasLoaded.current = true;
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -62,11 +97,10 @@ function RecommendationsContent() {
     };
 
     fetchData();
-  }, [isAuthenticated, playlistId, emotion]);
+  }, [isAuthenticated, playlistId, emotion, excludeGenresParam]);
 
   const handleRegenerate = async () => {
     setIsRegenerating(true);
-    setIsLoading(true);
     setError('');
     try {
       const res = await fetch('/api/playlist', {
@@ -77,19 +111,34 @@ function RecommendationsContent() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to regenerate');
-      router.push(`/recommendations?playlistId=${data.playlistId}&emotion=${encodeURIComponent(emotion)}`);
+
+      setPlaylistEmbed(
+        `<iframe src="https://open.spotify.com/embed/playlist/${data.playlistId}?utm_source=generator" width="100%" height="808" frameborder="0" allowtransparency="true" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`
+      );
+      setTopTracks(data.top_tracks_embedded || []);
+      setUsedGenres(data.genres || []);
+
+      router.replace(
+        `/recommendations?playlistId=${data.playlistId}&emotion=${encodeURIComponent(emotion)}`
+      );
     } catch (err: any) {
       setError(err.message);
+    } finally {
       setIsRegenerating(false);
     }
   };
 
   if (!isAuthenticated || isLoading) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen bg-alabaster">
         <Navigation />
-        <div className="flex-grow flex items-center justify-center bg-gradient-to-b from-fresh-green-50 to-sky-blue">
-          <div className="text-2xl text-fresh-green-800">Loading your personalized playlist...</div>
+        <div className="pt-24 flex items-center justify-center ambient-light min-h-screen">
+          <div className="text-center">
+            <div className="skeleton-breathing h-px w-64 mx-auto mb-8" />
+            <p className="text-stone text-sm tracking-sanctuary font-light">
+              assembling your playlist...
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -97,55 +146,77 @@ function RecommendationsContent() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen bg-alabaster">
         <Navigation />
-        <div className="flex-grow flex items-center justify-center bg-gradient-to-b from-fresh-green-50 to-sky-blue">
-          <div className="text-2xl text-red-600">Error: {error}</div>
+        <div className="pt-24 flex items-center justify-center ambient-light min-h-screen">
+          <div className="widget-glass rounded-lg p-10 text-center max-w-lg mx-auto">
+            <p className="text-red-700/80 text-sm tracking-wide font-light">{error}</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen bg-alabaster text-stone">
       <Navigation />
 
-      <div className="flex-grow py-16 px-6 bg-gradient-to-b from-fresh-green-50 to-sky-blue">
+      <div className="pt-24 pb-16 px-6 ambient-light">
         <div className="container mx-auto max-w-6xl">
-          <h1 className="text-4xl font-bold mb-4 text-center text-fresh-green-800">
-            {emotion ? `Your ${emotion} Playlist` : 'Your Personalized Playlist'}
-          </h1>
+          {/* Header */}
+          <div className="text-center mb-12">
+            <h1 className="text-4xl md:text-5xl text-ink font-light mb-6">
+              {emotion ? `your ${emotion} curation` : 'your personalized curation'}
+            </h1>
 
-          <div className="text-center mb-8">
-            <button
-              onClick={handleRegenerate}
-              disabled={isRegenerating}
-              className="bg-white border-2 border-fresh-purple-500 text-fresh-purple-600 hover:bg-fresh-purple-50 font-bold py-2 px-6 rounded-lg transition duration-300 disabled:opacity-50"
-            >
-              {isRegenerating ? 'Generating...' : 'Regenerate Playlist'}
-            </button>
-            {usedGenres.length > 0 && (
-              <p className="text-sm text-fresh-green-600 mt-2">
-                Current genres: {usedGenres.join(', ')}
-              </p>
-            )}
+            <div className="flex flex-col items-center gap-4">
+              <button
+                onClick={handleRegenerate}
+                disabled={isRegenerating}
+                className="btn-ghost-natural disabled:opacity-40"
+              >
+                {isRegenerating ? 'generating...' : 'regenerate playlist'}
+              </button>
+
+              {usedGenres.length > 0 && (
+                <div className="flex flex-wrap justify-center gap-2">
+                  {usedGenres.map((genre) => (
+                    <span
+                      key={genre}
+                      className="widget-glass rounded-full px-3 py-1.5 text-xs tracking-wide text-stone font-light border-l-2 border-l-sage-500/40"
+                    >
+                      {genre}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
+          {/* Spotify embed */}
           {playlistEmbed && (
-            <div className="mb-12">
-              <h2 className="text-2xl font-bold mb-4 text-fresh-green-800">Full Playlist</h2>
-              <div className="bg-white rounded-xl shadow-lg p-4 border border-fresh-green-100">
+            <div className="mb-16">
+              <h2 className="text-2xl text-ink font-light mb-6">
+                full playlist
+              </h2>
+              <div className="card-glass rounded-lg p-4 md:p-6">
                 <div dangerouslySetInnerHTML={{ __html: playlistEmbed }} />
               </div>
             </div>
           )}
 
+          {/* Top tracks */}
           {topTracks.length > 0 && (
             <div>
-              <h2 className="text-2xl font-bold mb-4 text-fresh-green-800">Top Recommended Tracks</h2>
+              <h2 className="text-2xl text-ink font-light mb-6">
+                top tracks
+              </h2>
               <div className="space-y-4">
                 {topTracks.map((track, index) => (
-                  <div key={index} className="bg-white rounded-xl shadow-lg p-4 border border-fresh-green-100">
+                  <div
+                    key={index}
+                    className="widget-glass rounded-lg p-4"
+                  >
                     <div
                       dangerouslySetInnerHTML={{
                         __html: track
@@ -161,9 +232,13 @@ function RecommendationsContent() {
         </div>
       </div>
 
-      <footer className="bg-fresh-green-900 text-white py-8 px-6">
+      {/* Footer */}
+      <footer className="bg-sand py-12 px-6">
+        <div className="section-divider-natural mb-12" />
         <div className="container mx-auto text-center">
-          <p className="text-fresh-green-200">&copy; 2025 FreyaAI, All rights reserved.</p>
+          <p className="text-xs tracking-wide text-stone font-light">
+            &copy; {new Date().getFullYear()} freya
+          </p>
         </div>
       </footer>
     </div>
@@ -174,10 +249,15 @@ export default function RecommendationsPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex flex-col">
+        <div className="min-h-screen bg-alabaster">
           <Navigation />
-          <div className="flex-grow flex items-center justify-center bg-gradient-to-b from-fresh-green-50 to-sky-blue">
-            <div className="text-2xl text-fresh-green-800">Loading...</div>
+          <div className="pt-24 flex items-center justify-center ambient-light min-h-screen">
+            <div className="text-center">
+              <div className="skeleton-breathing h-px w-48 mx-auto mb-8" />
+              <p className="text-stone text-sm tracking-sanctuary font-light">
+                loading...
+              </p>
+            </div>
           </div>
         </div>
       }

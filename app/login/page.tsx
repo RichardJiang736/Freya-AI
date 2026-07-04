@@ -6,15 +6,14 @@ import { useAuth } from '../context/auth';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
-  
-  // Redirect authenticated users to the home page
+  const { isAuthenticated, hasGenres } = useAuth();
+
   useEffect(() => {
     if (isAuthenticated) {
-      router.push('/');
+      router.push(hasGenres ? '/nlp' : '/genres');
     }
-  }, [isAuthenticated, router]);
-  
+  }, [isAuthenticated, hasGenres, router]);
+
   useEffect(() => {
     if (!isAuthenticated) {
       window.location.href = '/api/auth/login';
@@ -22,14 +21,16 @@ export default function LoginPage() {
   }, [isAuthenticated]);
 
   if (isAuthenticated) {
-    return null; // Will redirect immediately
+    return null;
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-fresh-green-50 to-sky-blue">
+    <div className="min-h-screen flex items-center justify-center bg-alabaster ambient-light">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-fresh-green-600 mx-auto mb-4"></div>
-        <p className="text-fresh-green-700">Redirecting to Spotify for authentication...</p>
+        <div className="skeleton-breathing h-px w-48 mx-auto mb-8" />
+        <p className="text-stone text-sm tracking-sanctuary font-light">
+          connecting to spotify...
+        </p>
       </div>
     </div>
   );
