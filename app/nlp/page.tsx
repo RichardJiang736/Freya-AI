@@ -27,7 +27,7 @@ export default function NLPPage() {
     setError('');
     
     try {
-      const response = await fetch(`${process.env.FLASK_API_BASE_URL || 'http://localhost:8000'}/api/nlp`, {
+      const response = await fetch('/api/nlp', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -52,7 +52,7 @@ export default function NLPPage() {
 
   const handleCreatePlaylist = async () => {
     try {
-      const response = await fetch(`${process.env.FLASK_API_BASE_URL || 'http://localhost:8000'}/api/create_playlist`, {
+      const response = await fetch('/api/playlist', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -67,8 +67,9 @@ export default function NLPPage() {
         throw new Error(data.error || 'Failed to create playlist');
       }
       
-      // Redirect to recommendations page with playlist data
-      router.push('/recommendations');
+      const playlistId = data.playlistId;
+      const emotion = refinedEmotion || mainEmotion;
+      router.push(`/recommendations?playlistId=${playlistId}&emotion=${emotion}`);
     } catch (err: any) {
       setError(err.message);
     }

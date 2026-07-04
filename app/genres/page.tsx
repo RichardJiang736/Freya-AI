@@ -46,7 +46,7 @@ export default function GenresPage() {
     
     const loadUserGenres = async () => {
       try {
-        const response = await fetch(`${process.env.FLASK_API_BASE_URL || 'http://localhost:8000'}/genres`, {
+        const response = await fetch('/api/genres', {
           credentials: 'include',
         });
         const data = await response.json();
@@ -77,7 +77,7 @@ export default function GenresPage() {
     setError('');
     
     try {
-      const response = await fetch(`${process.env.FLASK_API_BASE_URL || 'http://localhost:8000'}/update-genres`, {
+      const response = await fetch('/api/genres', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

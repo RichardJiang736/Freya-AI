@@ -15,11 +15,9 @@ export default function LoginPage() {
     }
   }, [isAuthenticated, router]);
   
-  // Function to initiate Spotify login
   useEffect(() => {
     if (!isAuthenticated) {
-      // Redirect to Flask login endpoint which will handle Spotify OAuth
-      window.location.href = `${process.env.FLASK_API_BASE_URL || 'http://localhost:8000'}/login`;
+      window.location.href = '/api/auth/login';
     }
   }, [isAuthenticated]);
 
