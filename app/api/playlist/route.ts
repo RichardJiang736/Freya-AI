@@ -17,7 +17,8 @@ import {
   getEmotionProfile,
 } from '@/src/lib/emotions';
 import { getAllGenres } from '@/src/lib/genres';
-import { matchGenres, getSafeFallbackGenres } from '@/src/lib/genre-matcher';
+import { matchAllGenres, getSafeFallbackGenres } from '@/src/lib/genre-matcher';
+import { loadGenreMemory, saveGenreMemory } from '@/src/lib/genre-memory';
 import { suggestGenresForEmotion } from '@/src/lib/deepseek';
 import { db } from '@/src/lib/db';
 import { userGenres } from '@/src/lib/db/schema';
@@ -62,22 +63,69 @@ export async function POST(req: NextRequest) {
       userGenreList = shuffle(userGenreList).slice(0, 2);
     }
 
-    const llmSuggested = await suggestGenresForEmotion(emotion, excludeGenres);
-    const matchedLLM = matchGenres(llmSuggested, 5 - userGenreList.length, [
-      ...excludeGenres,
-      ...userGenreList,
-    ]);
+    // Load genre memory for this user + emotion
+    const memory = loadGenreMemory(session.userId, emotion);
+    const accumulatedExclude = [...new Set([...memory.used, ...excludeGenres])];
 
-    const need = 5 - userGenreList.length - matchedLLM.length;
+    // Step A: Pull from memory.unused first — genres DeepSeek previously
+    // approved but we didn't have room for in earlier runs
+    const fromMemory: string[] = [];
+    const availableUnused = memory.unused.filter(
+      (g) => !userGenreList.includes(g) && !excludeGenres.includes(g)
+    );
+    const memoryTake = Math.min(5 - userGenreList.length, availableUnused.length);
+    for (let i = 0; i < memoryTake; i++) {
+      fromMemory.push(availableUnused[i]);
+    }
+    memory.unused = memory.unused.filter((g) => !fromMemory.includes(g));
+
+    // Step B: If still short, call DeepSeek for fresh suggestions
+    let matchedLLM: string[] = [];
+    const remainingNeed = 5 - userGenreList.length - fromMemory.length;
+    if (remainingNeed > 0) {
+      const llmSuggested = await suggestGenresForEmotion(emotion, accumulatedExclude);
+      const allMatched = matchAllGenres(llmSuggested, [
+        ...accumulatedExclude,
+        ...userGenreList,
+        ...fromMemory,
+      ]);
+
+      matchedLLM = allMatched.slice(0, remainingNeed);
+
+      // Save matched-but-unselected to memory.unused for future regenerations
+      const unselected = allMatched.slice(remainingNeed);
+      for (const g of unselected) {
+        if (!memory.unused.includes(g)) {
+          memory.unused.push(g);
+        }
+      }
+    }
+
+    // Step C: Safe fallbacks
+    const need = 5 - userGenreList.length - fromMemory.length - matchedLLM.length;
     let safeFill: string[] = [];
     if (need > 0) {
       const safePool = getSafeFallbackGenres().filter(
-        (g) => !userGenreList.includes(g) && !matchedLLM.includes(g) && !excludeGenres.includes(g)
+        (g) =>
+          !userGenreList.includes(g) &&
+          !fromMemory.includes(g) &&
+          !matchedLLM.includes(g) &&
+          !excludeGenres.includes(g)
       );
       safeFill = shuffle(safePool).slice(0, need);
     }
 
-    const combinedGenres = [...new Set([...userGenreList, ...matchedLLM, ...safeFill])];
+    // Accumulate used genres into memory so DeepSeek avoids them next time
+    for (const g of [...fromMemory, ...matchedLLM]) {
+      if (!memory.used.includes(g)) {
+        memory.used.push(g);
+      }
+    }
+    saveGenreMemory(session.userId, emotion, memory);
+
+    const combinedGenres = [
+      ...new Set([...userGenreList, ...fromMemory, ...matchedLLM, ...safeFill]),
+    ];
 
     const perGenre = Math.floor(20 / combinedGenres.length);
     const allTracksData: any[] = [];

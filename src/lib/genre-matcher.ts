@@ -42,6 +42,25 @@ function matchGenre(llmGenre: string, allGenres: string[]): string | null {
   return bestMatch;
 }
 
+export function matchAllGenres(
+  llmGenres: string[],
+  exclude: string[] = []
+): string[] {
+  const allGenres = getAllGenres();
+  const excludeSet = new Set(exclude.map((g) => normalize(g)));
+  const result: string[] = [];
+
+  for (const llmGenre of llmGenres) {
+    const matched = matchGenre(llmGenre, allGenres);
+    if (!matched) continue;
+    if (excludeSet.has(normalize(matched))) continue;
+    if (result.some((r) => normalize(r) === normalize(matched))) continue;
+    result.push(matched);
+  }
+
+  return result;
+}
+
 export function matchGenres(
   llmGenres: string[],
   count: number,

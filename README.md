@@ -4,6 +4,8 @@ Freya is a web application that curates personalized Spotify playlists based on 
 
 ## Architecture
 
+![Architecture Diagram](docs/architecture.svg)
+
 Single Next.js 16 server — no external backend required.
 
 ```
