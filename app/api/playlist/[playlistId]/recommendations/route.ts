@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getPlaylistTracks, getEmbeddedTrackCode } from '@/src/lib/spotify';
+import { getPlaylistTracks } from '@/src/lib/spotify';
 import { fetchAudioFeaturesBatch } from '@/src/lib/audio-features';
 import { calculateCompositeScore, getSortDirection, getEmotionProfile } from '@/src/lib/emotions';
 import { cacheGet } from '@/src/lib/cache';
@@ -29,8 +29,8 @@ export async function GET(
       title: t.name || '',
       artist: t.artists?.[0]?.name || '',
       album: t.album?.name || '',
+      albumArtUrl: t.album?.images?.[0]?.url || '',
       score: calculateCompositeScore(featuresDict[t.id] || {}, profile),
-      embedded_track_code: getEmbeddedTrackCode(t.id),
     }));
 
     const sortDir = getSortDirection(emotion);
@@ -42,7 +42,7 @@ export async function GET(
 
     const genres = cacheGet<string[]>(`playlist_genres_${playlistId}`) || [];
 
-    return NextResponse.json({ top_tracks: tracks.slice(0, 5), genres });
+    return NextResponse.json({ tracks, genres });
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }

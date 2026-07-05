@@ -5,14 +5,23 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Navigation from '../components/Navigation';
 import { useAuth } from '../context/auth';
 
+interface Track {
+  spotifyId: string;
+  title: string;
+  artist: string;
+  album: string;
+  albumArtUrl: string;
+  score: number;
+}
+
 function RecommendationsContent() {
   const searchParams = useSearchParams();
   const playlistId = searchParams.get('playlistId');
   const emotion = searchParams.get('emotion') || '';
   const excludeGenresParam = searchParams.get('excludeGenres') || '';
 
-  const [playlistEmbed, setPlaylistEmbed] = useState('');
-  const [topTracks, setTopTracks] = useState<string[]>([]);
+  const [currentPlaylistId, setCurrentPlaylistId] = useState('');
+  const [tracks, setTracks] = useState<Track[]>([]);
   const [usedGenres, setUsedGenres] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRegenerating, setIsRegenerating] = useState(false);
@@ -31,6 +40,7 @@ function RecommendationsContent() {
     if (!isAuthenticated) return;
     if (!playlistId && !emotion) return;
     if (hasLoaded.current) return;
+    hasLoaded.current = true;
 
     const excludedGenres = excludeGenresParam
       ? excludeGenresParam.split(',').filter(Boolean)
@@ -51,16 +61,17 @@ function RecommendationsContent() {
 
           const data = await res.json();
 
-          setPlaylistEmbed(
-            `<iframe src="https://open.spotify.com/embed/playlist/${playlistId}?utm_source=generator" width="100%" height="808" frameborder="0" allowtransparency="true" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`
+          setCurrentPlaylistId(playlistId);
+          setTracks(
+            (data.tracks || []).map((t: any) => ({
+              spotifyId: t.id,
+              title: t.title,
+              artist: t.artist,
+              album: t.album,
+              albumArtUrl: t.albumArtUrl || '',
+              score: t.score,
+            }))
           );
-
-          setTopTracks(
-            data.top_tracks?.map(
-              (t: { embedded_track_code: string }) => t.embedded_track_code
-            ) || []
-          );
-
           setUsedGenres(data.genres || []);
         } else {
           const res = await fetch('/api/playlist', {
@@ -76,18 +87,16 @@ function RecommendationsContent() {
             throw new Error(data.error || 'Failed to create playlist');
           }
 
-          setPlaylistEmbed(
-            `<iframe src="https://open.spotify.com/embed/playlist/${data.playlistId}?utm_source=generator" width="100%" height="808" frameborder="0" allowtransparency="true" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`
-          );
-
-          setTopTracks(data.top_tracks_embedded || []);
+          setCurrentPlaylistId(data.playlistId);
+          setTracks(data.tracks || []);
           setUsedGenres(data.genres || []);
 
-          router.replace(
+          window.history.replaceState(
+            null,
+            '',
             `/recommendations?playlistId=${data.playlistId}&emotion=${encodeURIComponent(emotion)}`
           );
         }
-        hasLoaded.current = true;
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -112,13 +121,13 @@ function RecommendationsContent() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to regenerate');
 
-      setPlaylistEmbed(
-        `<iframe src="https://open.spotify.com/embed/playlist/${data.playlistId}?utm_source=generator" width="100%" height="808" frameborder="0" allowtransparency="true" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`
-      );
-      setTopTracks(data.top_tracks_embedded || []);
+      setCurrentPlaylistId(data.playlistId);
+      setTracks(data.tracks || []);
       setUsedGenres(data.genres || []);
 
-      router.replace(
+      window.history.replaceState(
+        null,
+        '',
         `/recommendations?playlistId=${data.playlistId}&emotion=${encodeURIComponent(emotion)}`
       );
     } catch (err: any) {
@@ -157,14 +166,18 @@ function RecommendationsContent() {
     );
   }
 
+  const spotifyPlaylistUrl = currentPlaylistId
+    ? `https://open.spotify.com/playlist/${currentPlaylistId}`
+    : '';
+
   return (
     <div className="min-h-screen bg-alabaster text-stone">
       <Navigation />
 
       <div className="pt-24 pb-16 px-6 ambient-light">
-        <div className="container mx-auto max-w-6xl">
+        <div className="container mx-auto max-w-3xl">
           {/* Header */}
-          <div className="text-center mb-12">
+          <div className="text-center mb-14">
             <h1 className="text-4xl md:text-5xl text-ink font-light mb-6">
               {emotion ? `your ${emotion} curation` : 'your personalized curation'}
             </h1>
@@ -177,6 +190,17 @@ function RecommendationsContent() {
               >
                 {isRegenerating ? 'generating...' : 'regenerate playlist'}
               </button>
+
+              {spotifyPlaylistUrl && (
+                <a
+                  href={spotifyPlaylistUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="link-natural text-xs tracking-wide"
+                >
+                  listen on spotify &rarr;
+                </a>
+              )}
 
               {usedGenres.length > 0 && (
                 <div className="flex flex-wrap justify-center gap-2">
@@ -193,40 +217,59 @@ function RecommendationsContent() {
             </div>
           </div>
 
-          {/* Spotify embed */}
-          {playlistEmbed && (
+          {/* Track List */}
+          {tracks.length > 0 && (
             <div className="mb-16">
-              <h2 className="text-2xl text-ink font-light mb-6">
-                full playlist
-              </h2>
-              <div className="card-glass rounded-lg p-4 md:p-6">
-                <div dangerouslySetInnerHTML={{ __html: playlistEmbed }} />
+              <div className="flex items-center gap-3 mb-6">
+                <span className="h-px flex-1 bg-gradient-to-r from-transparent via-sage-500/25 to-transparent" />
+                <h2 className="text-sm tracking-sanctuary text-stone font-light uppercase">
+                  your playlist
+                </h2>
+                <span className="h-px flex-1 bg-gradient-to-r from-transparent via-sage-500/25 to-transparent" />
+              </div>
+
+              <div className="space-y-2.5">
+                {tracks.map((track, index) => (
+                  <a
+                    key={track.spotifyId}
+                    href={`https://open.spotify.com/track/${track.spotifyId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="track-card block no-underline"
+                  >
+                    <span className="track-card-index">
+                      {(index + 1).toString().padStart(2, '0')}
+                    </span>
+
+                    {track.albumArtUrl ? (
+                      <img
+                        src={track.albumArtUrl}
+                        alt={track.album}
+                        className="track-card-art"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="track-card-art bg-oak flex items-center justify-center">
+                        <span className="text-stone/30 text-xs">&#9834;</span>
+                      </div>
+                    )}
+
+                    <div className="track-card-info">
+                      <div className="track-card-title">{track.title}</div>
+                      <div className="track-card-artist">{track.artist}</div>
+                    </div>
+                  </a>
+                ))}
               </div>
             </div>
           )}
 
-          {/* Top tracks */}
-          {topTracks.length > 0 && (
-            <div>
-              <h2 className="text-2xl text-ink font-light mb-6">
-                top tracks
-              </h2>
-              <div className="space-y-4">
-                {topTracks.map((track, index) => (
-                  <div
-                    key={index}
-                    className="widget-glass rounded-lg p-4"
-                  >
-                    <div
-                      dangerouslySetInnerHTML={{
-                        __html: track
-                          .replace('height="380"', 'height="152"')
-                          .replace('width="300"', 'width="100%"'),
-                      }}
-                    />
-                  </div>
-                ))}
-              </div>
+          {/* Empty state */}
+          {tracks.length === 0 && (
+            <div className="text-center py-20">
+              <p className="text-stone text-sm tracking-wide font-light">
+                no tracks found for this emotion
+              </p>
             </div>
           )}
         </div>

@@ -191,6 +191,74 @@
     will-change: opacity;
   }
 
+  /* --- Track Card --- */
+  .track-card {
+    @apply bg-linen/40 backdrop-blur-md rounded-lg;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.875rem 1.25rem;
+    box-shadow: 0 1px 8px rgba(60, 50, 40, 0.03);
+    border-left: 2px solid rgba(125, 140, 110, 0.25);
+    transition: box-shadow 600ms var(--ease-buoyant),
+      background-color 600ms var(--ease-buoyant),
+      transform 600ms var(--ease-buoyant),
+      border-color 600ms var(--ease-buoyant);
+  }
+  .track-card:hover {
+    @apply bg-linen/70;
+    box-shadow: 0 8px 28px rgba(60, 50, 40, 0.07), 0 2px 4px rgba(60, 50, 40, 0.03);
+    border-left-color: rgba(125, 140, 110, 0.55);
+    transform: translateY(-1px);
+  }
+
+  .track-card-index {
+    font-size: 0.75rem;
+    font-weight: 300;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    min-width: 1.5rem;
+    text-align: right;
+  }
+
+  .track-card-art {
+    width: 52px;
+    height: 52px;
+    border-radius: 6px;
+    object-fit: cover;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(60, 50, 40, 0.08);
+    transition: box-shadow 600ms var(--ease-buoyant),
+      transform 600ms var(--ease-buoyant);
+  }
+  .track-card:hover .track-card-art {
+    box-shadow: 0 4px 14px rgba(60, 50, 40, 0.14);
+    transform: scale(1.03);
+  }
+
+  .track-card-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .track-card-title {
+    @apply text-ink font-light;
+    font-size: 0.9375rem;
+    line-height: 1.35;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .track-card-artist {
+    color: var(--text-stone);
+    font-size: 0.8rem;
+    font-weight: 300;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 2px;
+  }
+
   /* --- Section Divider --- */
   .section-divider-natural {
     @apply w-full h-px;

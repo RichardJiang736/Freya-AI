@@ -88,7 +88,7 @@ export async function createPlaylist(userId: string, name: string): Promise<{ id
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ name, public: false }),
+    body: JSON.stringify({ name, public: true }),
   });
 
   if (!res.ok) throw new Error('Failed to create playlist');
@@ -112,10 +112,3 @@ export async function addTracksToPlaylist(playlistId: string, trackUris: string[
   return res.json();
 }
 
-export function getEmbeddedPlaylistCode(playlistId: string): string {
-  return `<iframe src="https://open.spotify.com/embed/playlist/${playlistId}?utm_source=generator" width="100%" height="808" frameborder="0" allowtransparency="true" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
-}
-
-export function getEmbeddedTrackCode(trackId: string): string {
-  return `<iframe src="https://open.spotify.com/embed/track/${trackId}" width="300" height="380" frameborder="0" allowfullscreen="" allowtransparency="true" allow="encrypted-media"></iframe>`;
-}

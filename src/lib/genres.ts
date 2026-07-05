@@ -4,6 +4,15 @@ import { cacheGet, cacheSet } from './cache';
 
 let ALL_GENRES: string[] | null = null;
 
+function decodeEntities(s: string): string {
+  return s
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'");
+}
+
 export function loadGenres(): string[] {
   const cached = cacheGet<string[]>('all_genres');
   if (cached) return cached;
@@ -16,7 +25,8 @@ export function loadGenres(): string[] {
     ALL_GENRES = content
       .split('\n')
       .map((l) => l.trim())
-      .filter(Boolean);
+      .filter(Boolean)
+      .map(decodeEntities);
     cacheSet('all_genres', ALL_GENRES);
     return ALL_GENRES;
   } catch {

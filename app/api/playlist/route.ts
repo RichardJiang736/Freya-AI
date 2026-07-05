@@ -6,8 +6,6 @@ import {
   createPlaylist,
   addTracksToPlaylist,
   getCurrentUser,
-  getEmbeddedPlaylistCode,
-  getEmbeddedTrackCode,
 } from '@/src/lib/spotify';
 import { fetchAudioFeaturesBatch } from '@/src/lib/audio-features';
 import { cacheSet } from '@/src/lib/cache';
@@ -115,11 +113,16 @@ export async function POST(req: NextRequest) {
       safeFill = shuffle(safePool).slice(0, need);
     }
 
-    // Accumulate used genres into memory so DeepSeek avoids them next time
+    // Accumulate used genres into memory so DeepSeek avoids them next time.
+    // Keep only the most recent 15 to prevent the exclude list from growing
+    // unbounded, which would starve the pipeline of viable genres.
     for (const g of [...fromMemory, ...matchedLLM]) {
       if (!memory.used.includes(g)) {
         memory.used.push(g);
       }
+    }
+    if (memory.used.length > 15) {
+      memory.used = memory.used.slice(memory.used.length - 15);
     }
     saveGenreMemory(session.userId, emotion, memory);
 
@@ -127,8 +130,8 @@ export async function POST(req: NextRequest) {
       ...new Set([...userGenreList, ...fromMemory, ...matchedLLM, ...safeFill]),
     ];
 
-    const perGenre = Math.floor(20 / combinedGenres.length);
-    const allTracksData: any[] = [];
+    const perGenre = Math.ceil(20 / combinedGenres.length);
+    let allTracksData: any[] = [];
 
     for (const genre of combinedGenres) {
       try {
@@ -140,7 +143,6 @@ export async function POST(req: NextRequest) {
         const playlistId = items[0].id;
         const tracksRes = await getPlaylistTracks(playlistId);
         const allTracks = tracksRes?.items || [];
-        if (allTracks.length < perGenre) continue;
 
         let selected: any[];
         const sortDir = getSortDirection(emotion);
@@ -163,6 +165,14 @@ export async function POST(req: NextRequest) {
       } catch { /* skip failed genres */ }
     }
 
+    // Deduplicate by track ID — different genre searches may surface overlapping playlists
+    const seen = new Set<string>();
+    allTracksData = allTracksData.filter((t) => {
+      if (seen.has(t.id)) return false;
+      seen.add(t.id);
+      return true;
+    });
+
     const trackIds = allTracksData.map((t) => t.id);
     const featuresDict = await fetchAudioFeaturesBatch(trackIds);
 
@@ -177,6 +187,7 @@ export async function POST(req: NextRequest) {
         title: trackData.name || '',
         artist: trackData.artists?.[0]?.name || '',
         album: trackData.album?.name || '',
+        albumArtUrl: trackData.album?.images?.[0]?.url || '',
         score,
         emotion,
       });
@@ -191,25 +202,29 @@ export async function POST(req: NextRequest) {
       shuffle(trackObjects);
     }
 
-    const top20 = trackObjects.slice(0, 20);
+    const trackList = trackObjects.slice(0, 20);
 
-    if (!top20.length) {
+    if (!trackList.length) {
       return NextResponse.json({ error: `No tracks found for emotion: ${emotion}` }, { status: 404 });
     }
 
     const user = await getCurrentUser();
     const playlist = await createPlaylist(user.id, `Your ${emotion} Playlist`);
-    const trackUris = top20.map((t) => `spotify:track:${t.spotifyId}`);
+    const trackUris = trackList.map((t) => `spotify:track:${t.spotifyId}`);
     await addTracksToPlaylist(playlist.id, trackUris);
-
-    const top5 = top20.slice(0, 5);
 
     cacheSet(`playlist_genres_${playlist.id}`, combinedGenres, 600_000);
 
     return NextResponse.json({
       playlistId: playlist.id,
-      embedded_playlist_code: getEmbeddedPlaylistCode(playlist.id),
-      top_tracks_embedded: top5.map((t) => getEmbeddedTrackCode(t.spotifyId)),
+      tracks: trackList.map((t) => ({
+        spotifyId: t.spotifyId,
+        title: t.title,
+        artist: t.artist,
+        album: t.album,
+        albumArtUrl: t.albumArtUrl || '',
+        score: t.score,
+      })),
       genres: combinedGenres,
     });
   } catch (e: any) {

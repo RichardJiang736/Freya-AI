@@ -25,6 +25,7 @@ export interface TrackDTO {
   title: string;
   artist: string;
   album: string;
+  albumArtUrl?: string;
   score: number;
   emotion: string;
 }
